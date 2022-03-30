@@ -236,7 +236,8 @@ class TopDown(BasePose):
                     show=False,
                     show_keypoint_weight=False,
                     wait_time=0,
-                    out_file=None):
+                    out_file=None,
+                    fname = None):
         """Draw `result` over `img`.
 
         Args:
@@ -286,6 +287,7 @@ class TopDown(BasePose):
             imshow_bboxes(
                 img,
                 bboxes,
+                fname,
                 labels=bbox_labels,
                 colors=bbox_color,
                 text_color=text_color,
@@ -294,7 +296,7 @@ class TopDown(BasePose):
                 show=False)
 
         if pose_result:
-            imshow_keypoints(img, pose_result, skeleton, kpt_score_thr,
+            imshow_keypoints(img, pose_result,fname, skeleton, kpt_score_thr,
                              pose_kpt_color, pose_link_color, radius,
                              thickness)
 

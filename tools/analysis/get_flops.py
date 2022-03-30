@@ -4,7 +4,7 @@ from functools import partial
 
 import torch
 
-from mmpose.apis.inference import init_pose_model
+from mmpose.apis.inference_rear import init_pose_model
 
 try:
     from mmcv.cnn import get_model_complexity_info

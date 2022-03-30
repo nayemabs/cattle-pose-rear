@@ -450,6 +450,8 @@ def inference_top_down_pose_model(model,
             h.layer_outputs['heatmap'] = heatmap
 
         returned_outputs.append(h.layer_outputs)
+             
+        # print(bboxes_xywh)
 
     assert len(poses) == len(person_results), print(
         len(poses), len(person_results), len(bboxes_xyxy))
@@ -459,7 +461,9 @@ def inference_top_down_pose_model(model,
         pose_result['keypoints'] = pose
         pose_result['bbox'] = bbox_xyxy
         pose_results.append(pose_result)
-    print(returned_outputs)
+    # print(pose_result)
+        # print(bbox_xyxy)
+        # print(pose)
     return pose_results, returned_outputs
 
 
@@ -593,11 +597,12 @@ def vis_pose_result(model,
                     radius=4,
                     thickness=1,
                     kpt_score_thr=0.3,
-                    bbox_color='green',
+                    bbox_color='black',
                     dataset='TopDownCocoDataset',
                     dataset_info=None,
                     show=False,
-                    out_file=None):
+                    out_file=None,
+                    fname = None):
     """Visualize the detection results on the image.
 
     Args:
@@ -822,11 +827,14 @@ def vis_pose_result(model,
             pose_kpt_color = palette[[0] * 9]
 
         elif dataset in 'AnimalPoseDataset':
-            skeleton = [[0, 1], [0, 2], [1, 3], [0, 4], [1, 4], [4, 5], [5, 7],
-                        [6, 7], [5, 8], [8, 12], [12, 16], [5, 9], [9, 13],
-                        [13, 17], [6, 10], [10, 14], [14, 18], [6, 11],
-                        [11, 15], [15, 19]]
-
+            ##Rear
+            skeleton = [[0, 1], [0, 2], [1, 3], [0, 4]]
+            ###Side
+            # skeleton = [[0, 1], [0, 2], [1, 3], [0, 4], [1, 4], [4, 5], [5, 7],
+            # [6, 7], [5, 8], [8, 12], [12, 16], [5, 9], [9, 13],
+            # [13, 17], [6, 10], [10, 14], [14, 18], [6, 11],
+            # [11, 15], [15, 19],]
+            
             pose_link_color = palette[[0] * 20]
             pose_kpt_color = palette[[0] * 20]
         else:
@@ -846,7 +854,8 @@ def vis_pose_result(model,
         kpt_score_thr=kpt_score_thr,
         bbox_color=bbox_color,
         show=show,
-        out_file=out_file)
+        out_file=out_file,
+        fname=fname)
 
     return img
 

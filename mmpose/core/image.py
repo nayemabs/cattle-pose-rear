@@ -83,14 +83,14 @@ def imshow_bboxes(img,
             assert len(labels) == len(bboxes)
 
             for bbox, label, color in zip(bboxes, labels, colors):
-                # print(type(bbox))
+                print(type(bbox))
                 bbox_list = bbox.tolist()
-                # print(bbox_list)
+                print(bbox_list)
 
                 height = abs(bbox_list[0][0]-bbox_list[0][2])
                 width = abs(bbox_list[0][1]-bbox_list[0][3])
-                # print(height)
-                # print(width)
+                print(height)
+                print(width)
                 data.append(fname)
                 data.append(height)
                 data.append(width)
@@ -168,7 +168,7 @@ def imshow_keypoints(img,
                 assert len(pose_kpt_color) == len(kpts)
                 for kid, kpt in enumerate(kpts):
                     x_coord, y_coord, kpt_score = int(kpt[0]), int(kpt[1]), kpt[2]
-                    # print(f' x={x_coord},y={y_coord}')
+                    print(f' x={x_coord},y={y_coord}')
                     # data.append(x_coord)
                     # data.append(y_coord)
 
@@ -226,7 +226,6 @@ def imshow_keypoints(img,
                             mX = np.mean(X)
                             mY = np.mean(Y)
                             length = ((Y[0] - Y[1])**2 + (X[0] - X[1])**2)**0.5
-                            print(length)
                             angle = math.degrees(
                                 math.atan2(Y[0] - Y[1], X[0] - X[1]))
                             stickwidth = 2
@@ -258,7 +257,7 @@ def imshow_keypoints(img,
         data.append(fname)
         data.append(width)
         data.append(height)
-        # print(f'width= {width}, height= {height}') 
+        print(f'width= {width}, height= {height}') 
         writer.writerow(data)
 
     return img

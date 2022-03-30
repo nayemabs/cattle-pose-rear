@@ -6,7 +6,7 @@ import torch
 from mmcv.parallel import collate, scatter
 
 from mmpose.datasets.pipelines import Compose
-from .inference import LoadImage, _box2cs, _xywh2xyxy, _xyxy2xywh
+from .inference_rear import LoadImage, _box2cs, _xywh2xyxy, _xyxy2xywh
 
 
 def extract_pose_sequence(pose_results, frame_idx, causal, seq_len, step=1):

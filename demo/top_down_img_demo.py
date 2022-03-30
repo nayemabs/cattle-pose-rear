@@ -28,7 +28,7 @@ def main():
     parser.add_argument(
         '--show',
         action='store_true',
-        default=True,
+        default=False,
         help='whether to show img')
     parser.add_argument(
         '--out-img-root',
@@ -84,6 +84,7 @@ def main():
         image_id = img_keys[i]
         image = coco.loadImgs(image_id)[0]
         image_name = os.path.join(args.img_root, image['file_name'])
+        cattleImgName = image['file_name']
         ann_ids = coco.getAnnIds(image_id)
 
         # make person bounding boxes
@@ -123,7 +124,8 @@ def main():
             radius=args.radius,
             thickness=args.thickness,
             show=args.show,
-            out_file=out_file)
+            out_file=out_file,
+            fname = cattleImgName)
 
 
 if __name__ == '__main__':

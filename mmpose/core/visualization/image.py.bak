@@ -2,7 +2,7 @@
 import math
 import os
 import warnings
-import csv
+
 import cv2
 import mmcv
 import numpy as np
@@ -26,7 +26,6 @@ except (ImportError, ModuleNotFoundError):
 
 def imshow_bboxes(img,
                   bboxes,
-                  fname = None,
                   labels=None,
                   colors='green',
                   text_color='white',
@@ -73,65 +72,47 @@ def imshow_bboxes(img,
         thickness=thickness,
         show=False,
         out_file=None)
-    data = []
-    with open('/home/abs/mmpose/bbox_rear.csv', 'a') as f:
-        writer = csv.writer(f)
 
-        if labels is not None:
-            if not isinstance(labels, list):
-                labels = [labels for _ in range(len(bboxes))]
-            assert len(labels) == len(bboxes)
+    if labels is not None:
+        if not isinstance(labels, list):
+            labels = [labels for _ in range(len(bboxes))]
+        assert len(labels) == len(bboxes)
 
-            for bbox, label, color in zip(bboxes, labels, colors):
-                # print(type(bbox))
-                bbox_list = bbox.tolist()
-                # print(bbox_list)
+        for bbox, label, color in zip(bboxes, labels, colors):
+            if label is None:
+                continue
+            bbox_int = bbox[0, :4].astype(np.int32)
+            # roughly estimate the proper font size
+            text_size, text_baseline = cv2.getTextSize(label,
+                                                       cv2.FONT_HERSHEY_DUPLEX,
+                                                       font_scale, thickness)
+            text_x1 = bbox_int[0]
+            text_y1 = max(0, bbox_int[1] - text_size[1] - text_baseline)
+            text_x2 = bbox_int[0] + text_size[0]
+            text_y2 = text_y1 + text_size[1] + text_baseline
+            cv2.rectangle(img, (text_x1, text_y1), (text_x2, text_y2), color,
+                          cv2.FILLED)
+            cv2.putText(img, label, (text_x1, text_y2 - text_baseline),
+                        cv2.FONT_HERSHEY_DUPLEX, font_scale,
+                        mmcv.color_val(text_color), thickness)
 
-                height = abs(bbox_list[0][0]-bbox_list[0][2])
-                width = abs(bbox_list[0][1]-bbox_list[0][3])
-                # print(height)
-                # print(width)
-                data.append(fname)
-                data.append(height)
-                data.append(width)
-                writer.writerow(data)
-
-                if label is None:
-                    continue
-                bbox_int = bbox[0, :4].astype(np.int32)
-                # roughly estimate the proper font size
-                text_size, text_baseline = cv2.getTextSize(label,
-                                                        cv2.FONT_HERSHEY_DUPLEX,
-                                                        font_scale, thickness)
-                text_x1 = bbox_int[0]
-                text_y1 = max(0, bbox_int[1] - text_size[1] - text_baseline)
-                text_x2 = bbox_int[0] + text_size[0]
-                text_y2 = text_y1 + text_size[1] + text_baseline
-                cv2.rectangle(img, (text_x1, text_y1), (text_x2, text_y2), color,
-                            cv2.FILLED)
-                cv2.putText(img, label, (text_x1, text_y2 - text_baseline),
-                            cv2.FONT_HERSHEY_DUPLEX, font_scale,
-                            mmcv.color_val(text_color), thickness)
-
-        if show:
-            mmcv.imshow(img, win_name, wait_time)
-        if out_file is not None:
-            mmcv.imwrite(img, out_file)
-        return img
+    if show:
+        mmcv.imshow(img, win_name, wait_time)
+    if out_file is not None:
+        mmcv.imwrite(img, out_file)
+    return img
 
 
 @deprecated_api_warning({'pose_limb_color': 'pose_link_color'})
 def imshow_keypoints(img,
                      pose_result,
-                     fname = None,
                      skeleton=None,
                      kpt_score_thr=0.3,
                      pose_kpt_color=None,
                      pose_link_color=None,
                      radius=4,
                      thickness=1,
-                     show_keypoint_weight=False
-                     ):
+                     show_keypoint_weight=False):
     """Draw keypoints and links on an image.
 
     Args:
@@ -148,118 +129,81 @@ def imshow_keypoints(img,
                 links will not be drawn.
             thickness (int): Thickness of lines.
     """
-    print(fname)
+
     img = mmcv.imread(img)
     img_h, img_w, _ = img.shape
 
-    kptID=x0=y0=x1=y1=x2=y2=x3=y3=0
+    for kpts in pose_result:
 
-    # header = ['0x','0y','1x','1y','5x','5y','2x','2y','4x','4y','3x','3y']
-    data = []
-    with open('/home/abs/mmpose/kpt_rear.csv', 'a') as f:
-        writer = csv.writer(f)
-        # writer.writerow(header)
-        for kpts in pose_result:
+        kpts = np.array(kpts, copy=False)
 
-            kpts = np.array(kpts, copy=False)
+        # draw each point on image
+        if pose_kpt_color is not None:
+            assert len(pose_kpt_color) == len(kpts)
+            for kid, kpt in enumerate(kpts):
+                x_coord, y_coord, kpt_score = int(kpt[0]), int(kpt[1]), kpt[2]
+                if kpt_score > kpt_score_thr:
+                    if show_keypoint_weight:
+                        img_copy = img.copy()
+                        r, g, b = pose_kpt_color[kid]
+                        cv2.circle(img_copy, (int(x_coord), int(y_coord)),
+                                   radius, (int(r), int(g), int(b)), -1)
+                        transparency = max(0, min(1, kpt_score))
+                        cv2.addWeighted(
+                            img_copy,
+                            transparency,
+                            img,
+                            1 - transparency,
+                            0,
+                            dst=img)
+                    else:
+                        r, g, b = pose_kpt_color[kid]
+                        cv2.circle(img, (int(x_coord), int(y_coord)), radius,
+                                   (int(r), int(g), int(b)), -1)
 
-            # draw each point on image
-            if pose_kpt_color is not None:
-                assert len(pose_kpt_color) == len(kpts)
-                for kid, kpt in enumerate(kpts):
-                    x_coord, y_coord, kpt_score = int(kpt[0]), int(kpt[1]), kpt[2]
-                    # print(f' x={x_coord},y={y_coord}')
-                    # data.append(x_coord)
-                    # data.append(y_coord)
-
-                    if kptID == 0:
-                        x0 = x_coord
-                        y0 = y_coord
-                    elif kptID == 1:
-                        x1 = x_coord
-                        y1 = y_coord
-                    elif kptID == 2:
-                        x2 = x_coord
-                        y2 = y_coord
-                    elif kptID == 3:
-                        x3 = x_coord
-                        y3 = y_coord
-                
-
-                    kptID+=1
-
-                    if kpt_score > kpt_score_thr:
-                        if show_keypoint_weight:
-                            img_copy = img.copy()
-                            r, g, b = pose_kpt_color[kid]
-                            cv2.circle(img_copy, (int(x_coord), int(y_coord)),
-                                    radius, (int(r), int(g), int(b)), -1)
-                            transparency = max(0, min(1, kpt_score))
-                            cv2.addWeighted(
-                                img_copy,
-                                transparency,
-                                img,
-                                1 - transparency,
-                                0,
-                                dst=img)
-                        else:
-                            r, g, b = pose_kpt_color[kid]
-                            cv2.circle(img, (int(x_coord), int(y_coord)), radius,
-                                    (int(r), int(g), int(b)), -1)
-
-            # draw links
-            if skeleton is not None and pose_link_color is not None:
-                assert len(pose_link_color) == len(skeleton)
-                for sk_id, sk in enumerate(skeleton):
-                    pos1 = (int(kpts[sk[0], 0]), int(kpts[sk[0], 1]))
-                    pos2 = (int(kpts[sk[1], 0]), int(kpts[sk[1], 1]))
-                    if (pos1[0] > 0 and pos1[0] < img_w and pos1[1] > 0
-                            and pos1[1] < img_h and pos2[0] > 0 and pos2[0] < img_w
-                            and pos2[1] > 0 and pos2[1] < img_h
-                            and kpts[sk[0], 2] > kpt_score_thr
-                            and kpts[sk[1], 2] > kpt_score_thr):
-                        r, g, b = pose_link_color[sk_id]
-                        if show_keypoint_weight:
-                            img_copy = img.copy()
-                            X = (pos1[0], pos2[0])
-                            Y = (pos1[1], pos2[1])
-                            mX = np.mean(X)
-                            mY = np.mean(Y)
-                            length = ((Y[0] - Y[1])**2 + (X[0] - X[1])**2)**0.5
-                            print(length)
-                            angle = math.degrees(
-                                math.atan2(Y[0] - Y[1], X[0] - X[1]))
-                            stickwidth = 2
-                            polygon = cv2.ellipse2Poly(
-                                (int(mX), int(mY)),
-                                (int(length / 2), int(stickwidth)), int(angle), 0,
-                                360, 1)
-                            cv2.fillConvexPoly(img_copy, polygon,
-                                            (int(r), int(g), int(b)))
-                            transparency = max(
-                                0, min(1, 0.5 * (kpts[sk[0], 2] + kpts[sk[1], 2])))
-                            cv2.addWeighted(
-                                img_copy,
-                                transparency,
-                                img,
-                                1 - transparency,
-                                0,
-                                dst=img)
-                        else:
-                            cv2.line(
-                                img,
-                                pos1,
-                                pos2, (int(r), int(g), int(b)),
-                                thickness=thickness)
-      
-        width = round(((y1-y0)**2+(x1-x0)**2)**0.5)
-        height = round(((y3-y2)**2+(x3-x2)**2)**0.5)
-       
-        data.append(fname)
-        data.append(width)
-        data.append(height)
-        # print(f'width= {width}, height= {height}') 
-        writer.writerow(data)
+        # draw links
+        if skeleton is not None and pose_link_color is not None:
+            assert len(pose_link_color) == len(skeleton)
+            for sk_id, sk in enumerate(skeleton):
+                pos1 = (int(kpts[sk[0], 0]), int(kpts[sk[0], 1]))
+                pos2 = (int(kpts[sk[1], 0]), int(kpts[sk[1], 1]))
+                if (pos1[0] > 0 and pos1[0] < img_w and pos1[1] > 0
+                        and pos1[1] < img_h and pos2[0] > 0 and pos2[0] < img_w
+                        and pos2[1] > 0 and pos2[1] < img_h
+                        and kpts[sk[0], 2] > kpt_score_thr
+                        and kpts[sk[1], 2] > kpt_score_thr):
+                    r, g, b = pose_link_color[sk_id]
+                    if show_keypoint_weight:
+                        img_copy = img.copy()
+                        X = (pos1[0], pos2[0])
+                        Y = (pos1[1], pos2[1])
+                        mX = np.mean(X)
+                        mY = np.mean(Y)
+                        length = ((Y[0] - Y[1])**2 + (X[0] - X[1])**2)**0.5
+                        angle = math.degrees(
+                            math.atan2(Y[0] - Y[1], X[0] - X[1]))
+                        stickwidth = 2
+                        polygon = cv2.ellipse2Poly(
+                            (int(mX), int(mY)),
+                            (int(length / 2), int(stickwidth)), int(angle), 0,
+                            360, 1)
+                        cv2.fillConvexPoly(img_copy, polygon,
+                                           (int(r), int(g), int(b)))
+                        transparency = max(
+                            0, min(1, 0.5 * (kpts[sk[0], 2] + kpts[sk[1], 2])))
+                        cv2.addWeighted(
+                            img_copy,
+                            transparency,
+                            img,
+                            1 - transparency,
+                            0,
+                            dst=img)
+                    else:
+                        cv2.line(
+                            img,
+                            pos1,
+                            pos2, (int(r), int(g), int(b)),
+                            thickness=thickness)
 
     return img
 

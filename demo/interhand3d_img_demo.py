@@ -8,7 +8,7 @@ import numpy as np
 from xtcocotools.coco import COCO
 
 from mmpose.apis import inference_interhand_3d_model, vis_3d_pose_result
-from mmpose.apis.inference import init_pose_model
+from mmpose.apis.inference_rear import init_pose_model
 from mmpose.core import SimpleCamera
 
 

@@ -12,7 +12,9 @@ dataset_info = dict(
     keypoint_info={
         0:
         dict(
-            name='Rear-Height-top', id=0, color=[255, 0, 255], type='upper', swap=''),
+            name='Rear-Height-top', id=0, color=[255, 0, 255], 
+            type='upper', 
+            swap=''),
         1:
         dict(
             name='Rear-Height-bottom',
