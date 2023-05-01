@@ -132,3 +132,12 @@ docs/**/modelzoo.md
 *.pth
 
 *.DS_Store
+
+
+# Custom
+B3_Extracted
+Checkpoints
+data
+work_dirs
+work_dirs_rear
+*.csv
